@@ -1,12 +1,14 @@
 ## Quick Start
 
+```bash
 git clone https://github.com/Akashranjan15/IMS.git
 cd IMS
 docker compose up --build
+```
 
-Frontend: http://localhost:3000
-API docs: http://localhost:8000/docs
-Health:   http://localhost:8000/health
+- **Frontend:** http://localhost:3000
+- **API docs:** http://localhost:8000/docs
+- **Health:** http://localhost:8000/health
 
 # Incident Management System
 
