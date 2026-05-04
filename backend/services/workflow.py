@@ -99,6 +99,6 @@ async def transition_work_item(session: AsyncSession, incident_id: int, target: 
         state = STATE_MAP[work_item.status]
         await state.transition(work_item, target, session)
         session.add(work_item)
-    await session.refresh(work_item, ["rca"])
+    await session.refresh(work_item, ["rca", "updated_at"])
     return work_item
 
