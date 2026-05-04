@@ -1,0 +1,121 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ims
+      POSTGRES_USER: ims
+      POSTGRES_PASSWORD: ims_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ims -d ims"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ims
+      MONGO_INITDB_ROOT_PASSWORD: ims_password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ims
+      DOCKER_INFLUXDB_INIT_PASSWORD: ims_password_123
+      DOCKER_INFLUXDB_INIT_ORG: ims-org
+      DOCKER_INFLUXDB_INIT_BUCKET: ims-metrics
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ims-influx-token
+    ports:
+      - "8086:8086"
+    volumes:
+      - influx_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  fastapi:
+    build:
+      context: ./backend
+    environment:
+      POSTGRES_DSN: postgresql+asyncpg://ims:ims_password@postgres:5432/ims
+      MONGO_DSN: mongodb://ims:ims_password@mongodb:27017/?authSource=admin
+      MONGO_DB: ims
+      REDIS_DSN: redis://redis:6379/0
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: ims-influx-token
+      INFLUX_ORG: ims-org
+      INFLUX_BUCKET: ims-metrics
+      IMS_JWT_SECRET: change-me-super-secret
+      IMS_JWT_ALGORITHM: HS256
+      IMS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  react:
+    build:
+      context: ./frontend
+      args:
+        # WARNING: Replace this demo token before any production deployment.
+        # Generate a fresh token: cd backend && python -c
+        # "from services.auth import create_access_token;
+        #  print(create_access_token(expires_minutes=525600))"
+        VITE_API_BASE_URL: http://localhost:8000
+        VITE_API_TOKEN: ${IMS_DEMO_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpbXMtb3BlcmF0b3IiLCJpYXQiOjE3Nzc2MjQxMjksImV4cCI6MTgwOTE2MDEyOX0.NdTN_CcQ2hmywiTJ-DYrqXHyTj5YVBK8rHyDUAI2ZEI}
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+      VITE_API_TOKEN: ${IMS_DEMO_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpbXMtb3BlcmF0b3IiLCJpYXQiOjE3Nzc2MjQxMjksImV4cCI6MTgwOTE2MDEyOX0.NdTN_CcQ2hmywiTJ-DYrqXHyTj5YVBK8rHyDUAI2ZEI}
+    ports:
+      - "3000:3000"
+    depends_on:
+      fastapi:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mongo_data:
+  influx_data:
