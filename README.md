@@ -1,3 +1,13 @@
+## Quick Start
+
+git clone https://github.com/Akashranjan15/IMS.git
+cd IMS
+docker compose up --build
+
+Frontend: http://localhost:3000
+API docs: http://localhost:8000/docs
+Health:   http://localhost:8000/health
+
 # Incident Management System
 
 Built this as part of a Zeotap SRE internship assignment. The idea is to simulate how a real ops team would handle a flood of error signals from different infrastructure components.
@@ -44,21 +54,21 @@ flowchart LR
 The Compose file includes a demo JWT for local development. To generate your own token:
 
 ```bash
-cd ims-project/backend
+cd IMS/backend
 python -c "from services.auth import create_access_token; print(create_access_token(expires_minutes=525600))"
 ```
 
 Start the stack:
 
 ```bash
-cd ims-project
+cd IMS
 IMS_DEMO_TOKEN="<paste-token-here>" docker compose up --build
 ```
 
 For a quick local run with the bundled demo token:
 
 ```bash
-cd ims-project
+cd IMS
 docker compose up --build
 ```
 
@@ -96,8 +106,8 @@ Authorization: Bearer <token>
 Install simulator dependencies locally or run from the backend container environment:
 
 ```bash
-cd ims-project
-pip install -r backend/requirements.txt
+cd IMS
+pip install httpx
 python simulate_failure.py
 ```
 
@@ -106,7 +116,7 @@ The script sends 150 `RDBMS_PRIMARY_01` signals, which creates one P0 incident. 
 ## Tests
 
 ```bash
-cd ims-project/backend
+cd IMS/backend
 pytest
 ```
 
