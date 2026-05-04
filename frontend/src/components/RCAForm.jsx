@@ -20,6 +20,7 @@ export default function RCAForm({ incident, request, onSaved }) {
   })
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
+  const [lastIncidentId, setLastIncidentId] = useState(incident.id)
 
   useEffect(() => {
     setForm({
@@ -29,7 +30,13 @@ export default function RCAForm({ incident, request, onSaved }) {
       fix_applied: incident.rca?.fix_applied || '',
       prevention_steps: incident.rca?.prevention_steps || '',
     })
-    setMessage('')
+    // Only clear message if we are switching to a completely different incident
+    setLastIncidentId((prevId) => {
+      if (prevId !== incident.id) {
+        setMessage('')
+      }
+      return incident.id
+    })
   }, [incident])
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
@@ -48,6 +55,7 @@ export default function RCAForm({ incident, request, onSaved }) {
         }),
       })
       setMessage('RCA saved')
+      setTimeout(() => setMessage(''), 4000)
       await onSaved()
     } catch (err) {
       setMessage(err.message)
@@ -85,7 +93,7 @@ export default function RCAForm({ incident, request, onSaved }) {
         Prevention steps
         <textarea minLength="20" value={form.prevention_steps} onChange={(event) => update('prevention_steps', event.target.value)} required />
       </label>
-      <button type="submit" disabled={saving}>{saving ? 'Saving' : 'Save RCA'}</button>
+      <button type="submit" disabled={saving}>{saving ? 'Saving...' : (incident.rca ? 'Update RCA' : 'Save RCA')}</button>
       {message && <div className="inline-message">{message}</div>}
     </form>
   )
