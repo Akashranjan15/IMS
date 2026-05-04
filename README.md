@@ -6,6 +6,7 @@ Built this as part of a Zeotap SRE internship assignment. The idea is to simulat
 
 ASCII fallback (renders in all PDF viewers):
 
+```text
 +------------------+       +-------------------+
 |  React :3000     |------>|  FastAPI :8000     |
 +------------------+       +-------------------+
@@ -24,6 +25,7 @@ ASCII fallback (renders in all PDF viewers):
   PostgreSQL     MongoDB     InfluxDB
   (work_items    (raw        (throughput
    + rca)        signals)     metrics)
+```
 
 ```mermaid
 flowchart LR
